@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Fifteen game</title>
+</head>
+<style>
+    .pelikentta {
+        height: 400px;
+        width: 400px;
+        position:absolute;
+        border: 10px solid black;
+    }
+    .palikka{
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        border: 1px solid rgb(0, 0, 0);
+        background-color: hotpink;
+        height: 100px;
+        width: 100px;
+        position: absolute;
+        text-align:center;
+    }
+    .empty{
+        background-color: transparent;
+        color: transparent;
+        border: none;
+        height: 100px;
+        width: 100px;
+        position: absolute;
+        text-align:center;
+    }
+
+</style>
+<body>
+    <h1 id = "h1_testi">Testisivusto</h1>
+    <button id = "button_testi">Testi</button>
+    <div>
+        <div class = "pelikentta">
+        </div>
+    </div>
+    <div>
+    </div>
+    <script>
+
+        let palikkaKokoelma;
+
+        //random funktio palikoiden arpomiseen
+        function arvoPalikka(palikkaKokoelma){
+                let arvottuJarjestys = [];
+                for(let i = 0; i < 16; i++){
+                    arvottuJarjestys.push(palikkaKokoelma[Math.floor(Math.random() * palikkaKokoelma.length)]);
+                    palikkaKokoelma.splice(palikkaKokoelma.indexOf(arvottuJarjestys[i]), 1);
+                }
+            return arvottuJarjestys;
+        }
+
+        $(document).ready(function(){
+
+
+            $("#button_testi").click(function(){
+                restartGame();
+            })
+
+            //resetoidaan pelikenttä
+            function restartGame(){
+                
+                luoPelikenttä();
+                pelikuviot = $(".pelikentta").children();
+                alustaPelikentta();
+                laskeEmptysijainti();
+                mahdollisetSiirrot(empty_y, empty_x);
+                lisaaPalikkaMetodi();
+            }
+
+
+            //luodaan kenttä
+            luoPelikenttä(palikkaKokoelma);
+            
+            let rows = [Array(4), Array(4), Array(4), Array(4)];
+            let pelikuviot = $(".pelikentta").children();
+            let empty_y, empty_x;
+            let click_y, click_x;
+            let location = ' ';
+            let click_location;
+            let movable_tiles = [];
+            let pelikuviot_array = [];
+            //luodaan pelitaulukko
+            alustaPelikentta();
+
+            //array of pelikuviot with innerHTMl
+            function alustaPelikentta(){
+
+            for(let i = 0; i < pelikuviot.length; i++){
+                pelikuviot_array[i] = (pelikuviot[i].innerHTML);
+            }
+
+            for(let i = 0; i < rows.length; i++){
+                for(let j = 0; j < rows[i].length; j++){
+                    rows[i][j] = pelikuviot_array[j + (4 * i)];
+                }
+            }
+        }
+
+
+            function luoPelikenttä(){
+
+            //tyhjennä kenttä ennen luontia
+            palikkaKokoelma = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, " "];
+            $(".pelikentta").empty();
+            palikkaKokoelma = arvoPalikka(palikkaKokoelma);
+
+            for(let i = 0; i < palikkaKokoelma.length; i++){
+                $(".pelikentta").append("<div class = 'palikka'>" + palikkaKokoelma[i] + "</div>");
+            }
+
+            //asetetaan ohjelmallisesti palikat 4x4 järjestykseen
+            $(".palikka").each(function(index){
+                $(this).css("left",(index%4)*100);
+                $(this).css("top",Math.floor(index/4)*100);
+
+                //add empty class to empty element
+                if(palikkaKokoelma[index] == " "){
+                    $(this).addClass("empty");
+                }
+            });
+            }
+
+            laskeEmptysijainti();
+
+            function laskeEmptysijainti(){
+
+                //napataan emptyn sijainti eli => 'location tile'
+                for(let i = 0; i < rows.length; i++){
+                    if(rows[i].includes(location)){
+                       empty_y = i;
+                    }
+                }
+    
+                rows[empty_y].forEach(function(element, index){
+                    if(element == location){
+                        empty_x = index;
+                    }
+                });
+            }
+
+            //napataan mahdolliset alkusiirrot
+            mahdollisetSiirrot(empty_y, empty_x);
+
+            //palikka painallus eventti
+            lisaaPalikkaMetodi();
+
+            function lisaaPalikkaMetodi(){
+                
+            $(".palikka").click(function(){
+
+                click_location = $(this).html();
+
+            for(let i = 0; i < rows.length; i++){
+                if(rows[i].includes(click_location)){
+                   click_y = i;
+                }
+            }
+
+            rows[click_y].forEach(function(element, index){
+                if(element == click_location){
+                    click_x = index;
+                }
+            });
+
+            if(movable_tiles.includes(parseInt(rows[click_y][click_x]))){
+                //console.log("movable");
+
+                if(movable_tiles[0] == (parseInt(rows[click_y][click_x]))){
+                    //console.log("yläpuoli");
+                    $(this).animate({top: '+=100px'}, 200);
+                    $(".empty").animate({top: '-=100px'}, 200);
+
+                    rows[empty_y][empty_x] = rows[click_y][click_x];
+                    rows[click_y][click_x] = ' ';
+                    empty_y = empty_y - 1;
+                }
+                else if(movable_tiles[1] == (parseInt(rows[click_y][click_x]))){
+                    //console.log("alapuoli");
+                    $(this).animate({top: '-=100px'}, 200);
+                    $(".empty").animate({top: '+=100px'}, 200);
+                    
+                    rows[empty_y][empty_x] = rows[click_y][click_x];
+                    rows[click_y][click_x] = ' ';
+                    empty_y = empty_y + 1;
+                }
+                else if(movable_tiles[2] == (parseInt(rows[click_y][click_x]))){
+                    //console.log("vasenpuoli");
+                    $(this).animate({left: '+=100px'}, 200);
+                    $(".empty").animate({left: '-=100px'}, 200);
+
+                    rows[empty_y][empty_x] = rows[click_y][click_x];
+                    rows[click_y][click_x] = ' ';
+                    empty_x = empty_x - 1;      
+                }
+                else if(movable_tiles[3] == (parseInt(rows[click_y][click_x]))){
+                    //console.log("oikeapuoli");
+                    $(this).animate({left: '-=100px'}, 200);
+                    $(".empty").animate({left: '+=100px'}, 200);
+
+                    rows[empty_y][empty_x] = rows[click_y][click_x];
+                    rows[click_y][click_x] = ' ';
+                    empty_x = empty_x + 1;
+                }
+
+                //lasketaan uudelleen mahdolliset siirrot, 0 tarkoittaa pelikentän ulkopuolta
+                mahdollisetSiirrot(empty_y, empty_x)
+
+                console.log(rows);
+
+                //tarkistetaan voitto, jos array päästään läpi 1,2,3,4,5... jne voitit pelin
+                if(rows[0][0] == 1 && rows[0][1] == 2 && rows[0][2] == 3 && rows[0][3] == 4){
+                    console.log("Ensimmäinen rivi on oikein!");
+                    if(rows[1][0] == 5 && rows[1][1] == 6 && rows[1][2] == 7 && rows[1][3] == 8){
+                        console.log("Toinen rivi on oikein!");
+                        if(rows[2][0] == 9 && rows[2][1] == 10 && rows[2][2] == 11 && rows[2][3] == 12){
+                            console.log("Kolmas rivi on oikein!");
+                            if(rows[3][0] == 13 && rows[3][1] == 14 && rows[3][2] == 15){
+                                alert("Voitit pelin!");
+
+                                //resetoidaan peli kun voitettu
+                                restartGame();
+                            }
+                        }
+                    }
+                }
+
+            }
+            else{
+                alert("Virheellinen siirto, vain tyhjän alueen viereisiä palikoita voi siirtää");
+            }
+        });
+    }
+
+        //funktio siirtojen laskemista varten
+        function mahdollisetSiirrot(y, x){
+
+            empty_y = y;
+            empty_x = x;
+
+
+            if(empty_y - 1 < 0){
+                movable_tiles[0] = 0;
+            }
+            else{
+                movable_tiles[0] = parseInt(rows[empty_y - 1][empty_x]);
+            }
+            if(empty_y + 1 > 3){
+                movable_tiles[1] = 0;
+            }
+            else{
+                movable_tiles[1] = parseInt(rows[empty_y + 1][empty_x]);
+            }
+            if(empty_x - 1 < 0){
+                movable_tiles[2] = 0;
+            }
+            else{
+                movable_tiles[2] = parseInt(rows[empty_y][empty_x - 1]);
+            }
+            if(empty_x + 1 > 3){
+                movable_tiles[3] = 0;
+            }
+            else{
+                movable_tiles[3] = parseInt(rows[empty_y][empty_x + 1]);
+            }
+            //mahdolliset siirrot konsoleen
+            console.log(movable_tiles);
+            }
+    });
+
+    </script>
+</body>
+</html>
